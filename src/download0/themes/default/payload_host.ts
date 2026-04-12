@@ -20,6 +20,22 @@ import { checkJailbroken } from 'download0/check-jailbroken'
     startBgmIfEnabled()
   }
 
+  // ── Sound effects (controlled by music setting) ───────────────────────────
+  const SFX_CURSOR  = 'file:///../download0/sfx/cursor.wav'
+  const SFX_CONFIRM = 'file:///../download0/sfx/confirm.wav'
+  const SFX_CANCEL  = 'file:///../download0/sfx/cancel.wav'
+
+  function playSound (url: string) {
+    if (typeof CONFIG !== 'undefined' && CONFIG.music === false) return
+    try {
+      const clip = new jsmaf.AudioClip()
+      clip.volume = 1.0
+      clip.open(url)
+    } catch (e) {
+      log('SFX error: ' + (e as Error).message)
+    }
+  }
+
   is_jailbroken = checkJailbroken()
 
   jsmaf.root.children.length = 0
@@ -340,39 +356,30 @@ import { checkJailbroken } from 'download0/check-jailbroken'
   const backKey = jsmaf.circleIsAdvanceButton ? 14 : 13
 
   jsmaf.onKeyDown = function (keyCode) {
-    log('Key pressed: ' + keyCode)
-
     const fileButtonCount = fileList.length
 
     if (keyCode === 6) {
       const nextButton = currentButton + buttonsPerRow
-      if (nextButton < fileButtonCount) {
-        currentButton = nextButton
-      }
-      updateHighlight()
+      if (nextButton < fileButtonCount) { currentButton = nextButton }
+      playSound(SFX_CURSOR); updateHighlight()
     } else if (keyCode === 4) {
       const nextButton = currentButton - buttonsPerRow
-      if (nextButton >= 0) {
-        currentButton = nextButton
-      }
-      updateHighlight()
+      if (nextButton >= 0) { currentButton = nextButton }
+      playSound(SFX_CURSOR); updateHighlight()
     } else if (keyCode === 5) {
       const nextButton = currentButton + 1
       const row = Math.floor(currentButton / buttonsPerRow)
       const nextRow = Math.floor(nextButton / buttonsPerRow)
-      if (nextButton < fileButtonCount && nextRow === row) {
-        currentButton = nextButton
-      }
-      updateHighlight()
+      if (nextButton < fileButtonCount && nextRow === row) { currentButton = nextButton }
+      playSound(SFX_CURSOR); updateHighlight()
     } else if (keyCode === 7) {
       const col = currentButton % buttonsPerRow
-      if (col > 0) {
-        currentButton = currentButton - 1
-      }
-      updateHighlight()
+      if (col > 0) { currentButton = currentButton - 1 }
+      playSound(SFX_CURSOR); updateHighlight()
     } else if (keyCode === confirmKey) {
-      handleButtonPress()
+      playSound(SFX_CONFIRM); handleButtonPress()
     } else if (keyCode === backKey) {
+      playSound(SFX_CANCEL)
       log('Going back to main menu...')
       try {
         include('themes/' + (typeof CONFIG !== 'undefined' && CONFIG.theme ? CONFIG.theme : 'default') + '/main.js')

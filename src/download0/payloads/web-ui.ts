@@ -122,7 +122,7 @@ const html = '<!DOCTYPE html>\n' +
 '<body>\n' +
 '<div id="log"></div>\n' +
 '<div id="main">\n' +
-'<button onclick="loadPayload()">jelbrek</button>\n' +
+'<button onclick="loadPayload()">Jailbreak</button>\n' +
 '</div>\n' +
 '<div id="status">disconnected</div>\n' +
 '<script>\n' +

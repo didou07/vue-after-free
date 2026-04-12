@@ -2,11 +2,22 @@
     "config": {
         "autolapse": false,
         "autopoop": false,
-        "autoclose": false,
+        "autoclose": true,
         "autoclose_delay": 3000,
-        "music": true,
+        "music": false,
         "jb_behavior": 0,
-        "theme": "default"
+        "theme": "neon",
+        "exploit": {
+            "core": 4,
+            "rtprio": 256,
+            "grooms": 512,
+            "races": 100,
+            "alias": 100,
+            "sds": 64,
+            "workers": 2,
+            "timeout_s": 8,
+            "log_to_usb": true
+        }
     },
     "payloads": []
 }

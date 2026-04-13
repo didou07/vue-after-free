@@ -152,7 +152,7 @@ if (!is_jailbroken) {
 } else {
   utils.notify('Already Jailbroken!')
   xlog('Already jailbroken — skipping exploit')
-  try { include('themes/' + themeFolder + '/main.js') } catch (_) {}
+  try { include('themes/' + themeFolder + '/main.js') } catch (_e) { /* sandbox already escaped */ }
 }
 
 export function run_binloader () {

@@ -4,9 +4,9 @@
         "autopoop": false,
         "autoclose": true,
         "autoclose_delay": 3000,
-        "music": false,
+        "music": true,
         "jb_behavior": 0,
-        "theme": "neon",
+        "theme": "default",
         "exploit": {
             "core": 4,
             "rtprio": 256,
@@ -16,7 +16,7 @@
             "sds": 64,
             "workers": 2,
             "timeout_s": 8,
-            "log_to_usb": true
+            "log_to_usb": false
         }
     },
     "payloads": []

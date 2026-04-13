@@ -35,6 +35,10 @@ declare var CONFIG: {
   autopoop?: boolean;
   autoclose?: boolean;
   music?: boolean;
+  log_to_usb?: boolean;
+  jb_behavior?: number;
+  theme?: string;
+  exploit?: Record<string, unknown>;
 } | undefined
 
 declare var payloads: string[] | undefined

@@ -2139,7 +2139,7 @@ export function lapse () {
     try {
       const _ec2 = (typeof CONFIG !== 'undefined' && CONFIG.exploit) ? CONFIG.exploit : {}
       write_log_to_usb(FW_VERSION ?? 'unknown', _ec2)
-    } catch (_) {}
+    } catch (_e) { /* ignore — primary save already attempted */ }
 
     return false
   }

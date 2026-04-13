@@ -126,7 +126,7 @@ if (!is_jailbroken) {
         timer_end_stage('loader_timeout', 'Poll TIMEOUT')
         throw new Error('Lapse failed! restart and try again...')
       }
-      const s = Date.now(); while (Date.now() - s < 500) {}
+      const s = Date.now(); while (Date.now() - s < 500) { /* busy-wait */ }
     }
 
     xok('Exploit complete in ' + ((Date.now() - t_start) / 1000).toFixed(2) + 's')

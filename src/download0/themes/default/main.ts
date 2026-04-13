@@ -195,6 +195,5 @@ import { libc_addr } from 'download0/userland'
   // O/back: go back to same screen (no-op on main)
   highlight()
   log('Main menu loaded.')
-  void libc_addr // suppress unused import
-  void SFX_BACK
+  ;((_a, _b) => {})(libc_addr, SFX_BACK) // suppress unused import warnings
 })()

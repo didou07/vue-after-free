@@ -13,23 +13,23 @@ const _timer_stack: TimerEntry[] = []
 
 // ── Per-operation statistics ──────────────────────────────────────────────
 export const stats = {
-  race_attempts:     0,
-  race_wins:         0,
-  race_win_attempt:  -1,
-  race_timings_ms:   [] as number[],
+  race_attempts: 0,
+  race_wins: 0,
+  race_win_attempt: -1,
+  race_timings_ms: [] as number[],
 
-  spray_count:       0,
-  spray_total_ms:    0,
+  spray_count: 0,
+  spray_total_ms: 0,
 
-  alias_attempts:    0,
-  alias_wins:        0,
+  alias_attempts: 0,
+  alias_wins: 0,
   alias_win_attempt: -1,
-  alias_timings_ms:  [] as number[],
+  alias_timings_ms: [] as number[],
 
-  clobber_attempts:    0,
+  clobber_attempts: 0,
   clobber_win_attempt: -1,
 
-  reclaim_attempts:    0,
+  reclaim_attempts: 0,
   reclaim_win_attempt: -1,
 
   stage_ms: {} as Record<string, number>,
@@ -47,7 +47,7 @@ export function xlog (msg: string, level: string = 'LOG') {
 
 export function xdbg (msg: string) { xlog(msg, 'DBG') }
 export function xerr (msg: string) { xlog(msg, 'ERR') }
-export function xok  (msg: string) { xlog(msg, ' OK') }
+export function xok (msg: string) { xlog(msg, ' OK') }
 export function xval (label: string, val: string) { xlog(label + ' = ' + val, 'VAL') }
 
 // ═══════════════════════════════════════════════════════════
@@ -63,7 +63,7 @@ export function timer_start (label: string): number {
 
 export function timer_end (override_label?: string): number {
   const entry = _timer_stack.pop()
-  const ms    = Date.now() - (entry ? entry.t : Date.now())
+  const ms = Date.now() - (entry ? entry.t : Date.now())
   xlog('◀ ' + (override_label ?? entry?.label ?? '?') + '  →  ' + ms + ' ms', 'TMR')
   return ms
 }
@@ -112,14 +112,12 @@ export function log_clobber_attempt (
   attempt: number, won: boolean, cmd_hex: string, size: number
 ) {
   stats.clobber_attempts++
-  if (won) { stats.clobber_win_attempt = attempt; xok('Clobber WON  #' + attempt + '  cmd=' + cmd_hex + '  size=' + size) }
-  else     { xdbg('Clobber MISS #' + attempt + '  cmd=' + cmd_hex + '  size=' + size) }
+  if (won) { stats.clobber_win_attempt = attempt; xok('Clobber WON  #' + attempt + '  cmd=' + cmd_hex + '  size=' + size) } else { xdbg('Clobber MISS #' + attempt + '  cmd=' + cmd_hex + '  size=' + size) }
 }
 
 export function log_reclaim_attempt (attempt: number, won: boolean) {
   stats.reclaim_attempts++
-  if (won) { stats.reclaim_win_attempt = attempt; xok('Reclaim WON  #' + attempt) }
-  else     { xdbg('Reclaim MISS #' + attempt) }
+  if (won) { stats.reclaim_win_attempt = attempt; xok('Reclaim WON  #' + attempt) } else { xdbg('Reclaim MISS #' + attempt) }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -150,10 +148,10 @@ export function print_summary () {
   L.push('  Attempts : ' + stats.alias_attempts)
   L.push('  Won at   : ' + (stats.alias_win_attempt >= 0 ? '#' + stats.alias_win_attempt : 'NEVER'))
   L.push('── Recommendations ─────────────────────────────')
-  if (stats.race_win_attempt < 0)       L.push('  [!] RACE NEVER WON — try more grooms or different core')
+  if (stats.race_win_attempt < 0) L.push('  [!] RACE NEVER WON — try more grooms or different core')
   else if (stats.race_win_attempt < 20) L.push('  [+] Race won early — settings optimal')
   else if (stats.race_win_attempt > 150) L.push('  [~] Race won late — consider more grooms or different core')
-  if (stats.alias_win_attempt < 0)      L.push('  [!] ALIAS NEVER WON — increase alias/grooms')
-  if (stats.clobber_win_attempt < 0)    L.push('  [!] CLOBBER NEVER WON — increase grooms')
+  if (stats.alias_win_attempt < 0) L.push('  [!] ALIAS NEVER WON — increase alias/grooms')
+  if (stats.clobber_win_attempt < 0) L.push('  [!] CLOBBER NEVER WON — increase grooms')
   for (const line of L) log(line)
 }

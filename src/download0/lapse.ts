@@ -28,19 +28,19 @@ const PAGE_SIZE = 0x4000
 // ── Exploit tuning: read from CONFIG if available, else use defaults ──────
 const _ec = (typeof CONFIG !== 'undefined' && CONFIG.exploit) ? CONFIG.exploit : {}
 
-const MAIN_CORE    = (_ec.core    !== undefined) ? _ec.core    : 4
-const MAIN_RTPRIO  = (_ec.rtprio  !== undefined) ? _ec.rtprio  : 0x100
-const NUM_WORKERS  = (_ec.workers !== undefined) ? _ec.workers : 2
-const NUM_GROOMS   = (_ec.grooms  !== undefined) ? _ec.grooms  : 0x200
-const NUM_SDS      = (_ec.sds     !== undefined) ? _ec.sds     : 64
-const NUM_RACES    = (_ec.races   !== undefined) ? _ec.races   : 100
-const NUM_ALIAS    = (_ec.alias   !== undefined) ? _ec.alias   : 100
-const NUM_HANDLES  = 0x100
-const NUM_SDS_ALT  = 48
-const LEAK_LEN     = 16
-const NUM_LEAKS    = 32
+const MAIN_CORE = (_ec.core !== undefined) ? _ec.core : 4
+const MAIN_RTPRIO = (_ec.rtprio !== undefined) ? _ec.rtprio : 0x100
+const NUM_WORKERS = (_ec.workers !== undefined) ? _ec.workers : 2
+const NUM_GROOMS = (_ec.grooms !== undefined) ? _ec.grooms : 0x200
+const NUM_SDS = (_ec.sds !== undefined) ? _ec.sds : 64
+const NUM_RACES = (_ec.races !== undefined) ? _ec.races : 100
+const NUM_ALIAS = (_ec.alias !== undefined) ? _ec.alias : 100
+const NUM_HANDLES = 0x100
+const NUM_SDS_ALT = 48
+const LEAK_LEN = 16
+const NUM_LEAKS = 32
 const NUM_CLOBBERS = 8
-const MAX_AIO_IDS  = 0x80
+const MAX_AIO_IDS = 0x80
 
 log('[EXPLOIT CFG] core=' + MAIN_CORE + ' rtprio=' + MAIN_RTPRIO +
     ' grooms=' + NUM_GROOMS + ' races=' + NUM_RACES +
@@ -1937,20 +1937,20 @@ export function lapse () {
     timer_end_stage('stage2_leak', 'Stage 2: Leak kernel addresses')
     log('Stage 2 completed')
     log('Leaked addresses:')
-    log('  reqs1_addr: '       + hex(leak_result.reqs1_addr))
-    log('  kbuf_addr: '        + hex(leak_result.kbuf_addr))
-    log('  kernel_addr: '      + hex(leak_result.kernel_addr))
-    log('  target_id: '        + hex(leak_result.target_id))
-    log('  fake_reqs3_addr: '  + hex(leak_result.fake_reqs3_addr))
-    log('  aio_info_addr: '    + hex(leak_result.aio_info_addr))
-    log('  evf: '              + hex(leak_result.evf))
-    xval('reqs1_addr',      hex(leak_result.reqs1_addr))
-    xval('kbuf_addr',       hex(leak_result.kbuf_addr))
-    xval('kernel_addr',     hex(leak_result.kernel_addr))
-    xval('target_id',       hex(leak_result.target_id))
+    log('  reqs1_addr: ' + hex(leak_result.reqs1_addr))
+    log('  kbuf_addr: ' + hex(leak_result.kbuf_addr))
+    log('  kernel_addr: ' + hex(leak_result.kernel_addr))
+    log('  target_id: ' + hex(leak_result.target_id))
+    log('  fake_reqs3_addr: ' + hex(leak_result.fake_reqs3_addr))
+    log('  aio_info_addr: ' + hex(leak_result.aio_info_addr))
+    log('  evf: ' + hex(leak_result.evf))
+    xval('reqs1_addr', hex(leak_result.reqs1_addr))
+    xval('kbuf_addr', hex(leak_result.kbuf_addr))
+    xval('kernel_addr', hex(leak_result.kernel_addr))
+    xval('target_id', hex(leak_result.target_id))
     xval('fake_reqs3_addr', hex(leak_result.fake_reqs3_addr))
-    xval('aio_info_addr',   hex(leak_result.aio_info_addr))
-    xval('evf',             hex(leak_result.evf))
+    xval('aio_info_addr', hex(leak_result.aio_info_addr))
+    xval('evf', hex(leak_result.evf))
 
     log('')
     log('=== STAGE 3: Double free SceKernelAioRWRequest ===')
@@ -2017,10 +2017,10 @@ export function lapse () {
     // Calculate kernel base
     kernel.addr.base = kernel.addr.inside_kdata.sub(kernel_offset.EVF_OFFSET)
     log('Kernel base: ' + hex(kernel.addr.base))
-    xval('kernel_base',  hex(kernel.addr.base))
+    xval('kernel_base', hex(kernel.addr.base))
     xval('inside_kdata', hex(kernel.addr.inside_kdata))
-    xval('curproc',      hex(kernel.addr.curproc!))
-    xval('allproc',      hex(kernel.addr.allproc!))
+    xval('curproc', hex(kernel.addr.curproc!))
+    xval('allproc', hex(kernel.addr.allproc!))
 
     const uid_before = Number(getuid())
     const sandbox_before = Number(is_in_sandbox())

@@ -8,16 +8,16 @@ import { libc_addr } from 'download0/userland'
   if (typeof startBgmIfEnabled === 'function') startBgmIfEnabled()
 
   // ── Constants ─────────────────────────────────────────────────────────────
-  const CX       = 960
-  const BTN_W    = 560
-  const BTN_H    = 84
-  const BTN_L    = CX - BTN_W / 2
-  const START_Y  = 390
-  const GAP      = 112
-  const BG_URL   = 'file:///../download0/img/multiview_bg_VAF.png'
-  const BTN_URL  = 'file:///../download0/img/NeonBtn.png'
-  const SFX_CUR  = 'file:///../download0/sfx/cursor.wav'
-  const SFX_OK   = 'file:///../download0/sfx/confirm.wav'
+  const CX = 960
+  const BTN_W = 560
+  const BTN_H = 84
+  const BTN_L = CX - BTN_W / 2
+  const START_Y = 390
+  const GAP = 112
+  const BG_URL = 'file:///../download0/img/multiview_bg_VAF.png'
+  const BTN_URL = 'file:///../download0/img/NeonBtn.png'
+  const SFX_CUR = 'file:///../download0/sfx/cursor.wav'
+  const SFX_OK = 'file:///../download0/sfx/confirm.wav'
   const SFX_BACK = 'file:///../download0/sfx/cancel.wav'
 
   function sfx (url: string) {
@@ -28,13 +28,13 @@ import { libc_addr } from 'download0/userland'
   // ── Scene ─────────────────────────────────────────────────────────────────
   jsmaf.root.children.length = 0
 
-  new Style({ name: 'label',  color: 'rgb(255,255,255)',        size: 26 })
-  new Style({ name: 'sel',    color: 'rgb(255,255,255)',        size: 26 })
-  new Style({ name: 'num',    color: 'rgba(255,255,255,0.30)',  size: 17 })
+  new Style({ name: 'label', color: 'rgb(255,255,255)', size: 26 })
+  new Style({ name: 'sel', color: 'rgb(255,255,255)', size: 26 })
+  new Style({ name: 'num', color: 'rgba(255,255,255,0.30)', size: 17 })
   new Style({ name: 'numsel', color: 'rgba(120,210,255,0.90)', size: 17 })
   new Style({ name: 'footer', color: 'rgba(255,255,255,0.30)', size: 16 })
-  new Style({ name: 'exit',   color: 'rgb(255,100,100)',        size: 26 })
-  new Style({ name: 'exitd',  color: 'rgba(255,100,100,0.45)', size: 26 })
+  new Style({ name: 'exit', color: 'rgb(255,100,100)', size: 26 })
+  new Style({ name: 'exitd', color: 'rgba(255,100,100,0.45)', size: 26 })
 
   // Background
   jsmaf.root.children.push(new Image({ url: BG_URL, x: 0, y: 0, width: 1920, height: 1080 }))
@@ -42,7 +42,10 @@ import { libc_addr } from 'download0/userland'
   // Logo — centered, above buttons
   jsmaf.root.children.push(new Image({
     url: 'file:///../download0/img/logo.png',
-    x: CX - 180, y: 60, width: 360, height: 204
+    x: CX - 180,
+    y: 60,
+    width: 360,
+    height: 204
   }))
 
   // Thin divider below logo
@@ -52,20 +55,20 @@ import { libc_addr } from 'download0/userland'
 
   // ── Menu options ──────────────────────────────────────────────────────────
   const menuOptions = [
-    { label: lang.jailbreak,   script: 'loader.js',       imgKey: 'jailbreak',   num: '01' },
+    { label: lang.jailbreak, script: 'loader.js', imgKey: 'jailbreak', num: '01' },
     { label: lang.payloadMenu, script: 'payload_host.js', imgKey: 'payloadMenu', num: '02' },
-    { label: lang.config,      script: 'config_ui.js',    imgKey: 'config',      num: '03' },
+    { label: lang.config, script: 'config_ui.js', imgKey: 'config', num: '03' },
   ]
 
-  const btns:  Image[]                = []
-  const bars:  Image[]                = []
+  const btns: Image[] = []
+  const bars: Image[] = []
   const texts: (Image | jsmaf.Text)[] = []
-  const nums:  jsmaf.Text[]           = []
+  const nums: jsmaf.Text[] = []
   const origB: { x: number; y: number }[] = []
   const origT: { x: number; y: number }[] = []
 
   for (let i = 0; i < menuOptions.length; i++) {
-    const o  = menuOptions[i]!
+    const o = menuOptions[i]!
     const bY = START_Y + i * GAP
 
     // Button bg
@@ -145,14 +148,14 @@ import { libc_addr } from 'download0/userland'
     const TOTAL = btns.length
     for (let i = 0; i < TOTAL; i++) {
       const isExit = i === TOTAL - 1
-      const sel    = i === cur
+      const sel = i === cur
       const b = btns[i]!; const bar = bars[i]!
       const t = texts[i]!; const n = nums[i]!
 
-      b.alpha       = sel ? 0.24 : 0.10
+      b.alpha = sel ? 0.24 : 0.10
       b.borderColor = sel ? (isExit ? 'rgba(255,90,90,0.70)' : 'rgba(120,200,255,0.70)') : (isExit ? 'rgba(255,90,90,0.18)' : 'rgba(255,255,255,0.15)')
       b.borderWidth = sel ? 2 : 1
-      bar.alpha     = sel ? 1.0 : 0.30
+      bar.alpha = sel ? 1.0 : 0.30
 
       if ('style' in t) (t as jsmaf.Text).style = sel ? (isExit ? 'exit' : 'sel') : (isExit ? 'exitd' : 'label')
       n.style = sel ? 'numsel' : 'num'
@@ -176,9 +179,7 @@ import { libc_addr } from 'download0/userland'
   const confirmKey = jsmaf.circleIsAdvanceButton ? 13 : 14
 
   jsmaf.onKeyDown = function (kc: number) {
-    if (kc === 6 || kc === 5)      { cur = (cur + 1) % TOTAL;         sfx(SFX_CUR);  highlight() }
-    else if (kc === 4 || kc === 7) { cur = (cur - 1 + TOTAL) % TOTAL; sfx(SFX_CUR);  highlight() }
-    else if (kc === confirmKey) {
+    if (kc === 6 || kc === 5) { cur = (cur + 1) % TOTAL; sfx(SFX_CUR); highlight() } else if (kc === 4 || kc === 7) { cur = (cur - 1 + TOTAL) % TOTAL; sfx(SFX_CUR); highlight() } else if (kc === confirmKey) {
       sfx(SFX_OK)
       if (cur === TOTAL - 1) {
         try { include('includes/kill_vue.js') } catch (_e) { /* ignore */ }

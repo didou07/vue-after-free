@@ -10,25 +10,25 @@ import { checkJailbroken } from 'download0/check-jailbroken'
   if (typeof startBgmIfEnabled === 'function') startBgmIfEnabled()
 
   // ── Constants ─────────────────────────────────────────────────────────────
-  const SW       = 1920
-  const SH       = 1080
-  const PAD_X    = 60
-  const COL_GAP  = 28
-  const COL_W    = (SW - PAD_X * 2 - COL_GAP) / 2
-  const COL_R    = PAD_X + COL_W + COL_GAP
+  const SW = 1920
+  const SH = 1080
+  const PAD_X = 60
+  const COL_GAP = 28
+  const COL_W = (SW - PAD_X * 2 - COL_GAP) / 2
+  const COL_R = PAD_X + COL_W + COL_GAP
   const HEADER_H = 160
   const FOOTER_H = 44
-  const AVAIL_H  = SH - HEADER_H - FOOTER_H - 16
-  const BTN_H    = 88
-  const BTN_GAP  = 10
+  const AVAIL_H = SH - HEADER_H - FOOTER_H - 16
+  const BTN_H = 88
+  const BTN_GAP = 10
   const MAX_ROWS = Math.floor(AVAIL_H / (BTN_H + BTN_GAP))
-  const MAX_PL   = MAX_ROWS * 2
-  const START_Y  = HEADER_H + 8
+  const MAX_PL = MAX_ROWS * 2
+  const START_Y = HEADER_H + 8
 
-  const BG_URL   = 'file:///../download0/img/multiview_bg_VAF.png'
-  const BTN_URL  = 'file:///../download0/img/NeonBtn.png'
-  const SFX_CUR  = 'file:///../download0/sfx/cursor.wav'
-  const SFX_OK   = 'file:///../download0/sfx/confirm.wav'
+  const BG_URL = 'file:///../download0/img/multiview_bg_VAF.png'
+  const BTN_URL = 'file:///../download0/img/NeonBtn.png'
+  const SFX_CUR = 'file:///../download0/sfx/cursor.wav'
+  const SFX_OK = 'file:///../download0/sfx/confirm.wav'
   const SFX_BACK = 'file:///../download0/sfx/cancel.wav'
 
   function sfx (url: string) {
@@ -39,10 +39,10 @@ import { checkJailbroken } from 'download0/check-jailbroken'
   is_jailbroken = checkJailbroken()
 
   // ── Scan payloads ─────────────────────────────────────────────────────────
-  try { fn.register(0x05,  'ph_open',    ['bigint','bigint','bigint'], 'bigint') } catch (_e) { /* already registered */ }
-  try { fn.register(0x06,  'ph_close',   ['bigint'],                   'bigint') } catch (_e) { /* already registered */ }
-  try { fn.register(0x110, 'ph_getdnts', ['bigint','bigint','bigint'], 'bigint') } catch (_e) { /* already registered */ }
-  try { fn.register(0x03,  'ph_read',    ['bigint','bigint','bigint'], 'bigint') } catch (_e) { /* already registered */ }
+  try { fn.register(0x05, 'ph_open', ['bigint', 'bigint', 'bigint'], 'bigint') } catch (_e) { /* already registered */ }
+  try { fn.register(0x06, 'ph_close', ['bigint'], 'bigint') } catch (_e) { /* already registered */ }
+  try { fn.register(0x110, 'ph_getdnts', ['bigint', 'bigint', 'bigint'], 'bigint') } catch (_e) { /* already registered */ }
+  try { fn.register(0x03, 'ph_read', ['bigint', 'bigint', 'bigint'], 'bigint') } catch (_e) { /* already registered */ }
 
   type FEntry = { name: string; path: string }
   const fileList: FEntry[] = []
@@ -67,8 +67,7 @@ import { checkJailbroken } from 'download0/check-jailbroken'
           for (let i = 0; i < nl; i++) name += String.fromCharCode(mem.view(dbuf.add(new BigInt(0, off + 8 + i))).getUint8(0))
           if (dt === 8 && name !== '.' && name !== '..') {
             const low = name.toLowerCase()
-            if (low.endsWith('.elf') || low.endsWith('.bin') || low.endsWith('.js'))
-              fileList.push({ name, path: sp + '/' + name })
+            if (low.endsWith('.elf') || low.endsWith('.bin') || low.endsWith('.js')) { fileList.push({ name, path: sp + '/' + name }) }
           }
           off += rl
         }
@@ -81,20 +80,20 @@ import { checkJailbroken } from 'download0/check-jailbroken'
   // ── Scene ─────────────────────────────────────────────────────────────────
   jsmaf.root.children.length = 0
 
-  new Style({ name: 'white',    color: 'rgb(255,255,255)',        size: 22 })
-  new Style({ name: 'title',    color: 'rgb(255,255,255)',        size: 32 })
-  new Style({ name: 'muted',    color: 'rgba(255,255,255,0.50)', size: 20 })
-  new Style({ name: 'dim',      color: 'rgba(255,255,255,0.28)', size: 16 })
-  new Style({ name: 'badge',    color: 'rgba(120,210,255,0.85)', size: 14 })
-  new Style({ name: 'bsel',     color: 'rgb(80,220,255)',         size: 14 })
-  new Style({ name: 'back',     color: 'rgba(255,120,120,0.80)', size: 20 })
-  new Style({ name: 'scroll',   color: 'rgba(120,200,255,0.70)', size: 18 })
-  new Style({ name: 'footer',   color: 'rgba(255,255,255,0.28)', size: 16 })
-  new Style({ name: 'count',    color: 'rgba(120,210,255,0.60)', size: 16 })
-  new Style({ name: 'empty',    color: 'rgba(255,255,255,0.45)', size: 24 })
+  new Style({ name: 'white', color: 'rgb(255,255,255)', size: 22 })
+  new Style({ name: 'title', color: 'rgb(255,255,255)', size: 32 })
+  new Style({ name: 'muted', color: 'rgba(255,255,255,0.50)', size: 20 })
+  new Style({ name: 'dim', color: 'rgba(255,255,255,0.28)', size: 16 })
+  new Style({ name: 'badge', color: 'rgba(120,210,255,0.85)', size: 14 })
+  new Style({ name: 'bsel', color: 'rgb(80,220,255)', size: 14 })
+  new Style({ name: 'back', color: 'rgba(255,120,120,0.80)', size: 20 })
+  new Style({ name: 'scroll', color: 'rgba(120,200,255,0.70)', size: 18 })
+  new Style({ name: 'footer', color: 'rgba(255,255,255,0.28)', size: 16 })
+  new Style({ name: 'count', color: 'rgba(120,210,255,0.60)', size: 16 })
+  new Style({ name: 'empty', color: 'rgba(255,255,255,0.45)', size: 24 })
   new Style({ name: 'emptysub', color: 'rgba(255,255,255,0.25)', size: 17 })
-  new Style({ name: 'lnum',     color: 'rgba(255,255,255,0.22)', size: 14 })
-  new Style({ name: 'lnumsel', color: 'rgba(120,210,255,0.80)',  size: 14 })
+  new Style({ name: 'lnum', color: 'rgba(255,255,255,0.22)', size: 14 })
+  new Style({ name: 'lnumsel', color: 'rgba(120,210,255,0.80)', size: 14 })
 
   // Background
   jsmaf.root.children.push(new Image({ url: BG_URL, x: 0, y: 0, width: SW, height: SH }))
@@ -112,14 +111,20 @@ import { checkJailbroken } from 'download0/check-jailbroken'
   // Logo (top-right)
   jsmaf.root.children.push(new Image({
     url: 'file:///../download0/img/logo.png',
-    x: SW - 220, y: 12, width: 200, height: 112
+    x: SW - 220,
+    y: 12,
+    width: 200,
+    height: 112
   }))
 
   // Title
   if (useImageText) {
     jsmaf.root.children.push(new Image({
       url: textImageBase + 'payloadMenu.png',
-      x: PAD_X, y: 38, width: 300, height: 72
+      x: PAD_X,
+      y: 38,
+      width: 300,
+      height: 72
     }))
   } else {
     const ttl = new jsmaf.Text()
@@ -136,8 +141,12 @@ import { checkJailbroken } from 'download0/check-jailbroken'
 
   // Header divider
   const divH = new Image({
-    url: BTN_URL, x: PAD_X, y: HEADER_H - 2,
-    width: SW - PAD_X * 2, height: 2, alpha: 0.35
+    url: BTN_URL,
+    x: PAD_X,
+    y: HEADER_H - 2,
+    width: SW - PAD_X * 2,
+    height: 2,
+    alpha: 0.35
   })
   divH.borderColor = 'rgba(120,200,255,0.5)'; divH.borderWidth = 0
   jsmaf.root.children.push(divH)
@@ -145,8 +154,11 @@ import { checkJailbroken } from 'download0/check-jailbroken'
   // Column separator
   const colDiv = new Image({
     url: BTN_URL,
-    x: PAD_X + COL_W + COL_GAP / 2 - 1, y: HEADER_H + 4,
-    width: 1, height: AVAIL_H, alpha: 0.18
+    x: PAD_X + COL_W + COL_GAP / 2 - 1,
+    y: HEADER_H + 4,
+    width: 1,
+    height: AVAIL_H,
+    alpha: 0.18
   })
   colDiv.borderColor = 'rgba(255,255,255,0.3)'; colDiv.borderWidth = 0
   jsmaf.root.children.push(colDiv)
@@ -172,18 +184,18 @@ import { checkJailbroken } from 'download0/check-jailbroken'
   }
 
   // ── Slot widgets (2-column, full-width) ───────────────────────────────────
-  const slotBtns:   Image[]      = []
-  const slotBars:   Image[]      = []
-  const slotNums:   jsmaf.Text[] = []
+  const slotBtns: Image[] = []
+  const slotBars: Image[] = []
+  const slotNums: jsmaf.Text[] = []
   const slotBadges: jsmaf.Text[] = []
   const slotLabels: jsmaf.Text[] = []
-  const slotPaths:  jsmaf.Text[] = []
+  const slotPaths: jsmaf.Text[] = []
 
   for (let s = 0; s < MAX_PL; s++) {
-    const col  = s % 2
-    const row  = Math.floor(s / 2)
-    const bX   = col === 0 ? PAD_X : COL_R
-    const bY   = START_Y + row * (BTN_H + BTN_GAP)
+    const col = s % 2
+    const row = Math.floor(s / 2)
+    const bX = col === 0 ? PAD_X : COL_R
+    const bY = START_Y + row * (BTN_H + BTN_GAP)
 
     const btn = new Image({ url: BTN_URL, x: bX, y: bY, width: COL_W, height: BTN_H, alpha: 0.10 })
     btn.borderColor = 'rgba(255,255,255,0.14)'; btn.borderWidth = 1
@@ -226,7 +238,10 @@ import { checkJailbroken } from 'download0/check-jailbroken'
   if (useImageText) {
     jsmaf.root.children.push(new Image({
       url: textImageBase + (jsmaf.circleIsAdvanceButton ? 'xToGoBack' : 'oToGoBack') + '.png',
-      x: PAD_X, y: navY + 4, width: 160, height: 38
+      x: PAD_X,
+      y: navY + 4,
+      width: 160,
+      height: 38
     }))
   } else {
     const bt = new jsmaf.Text()
@@ -253,34 +268,34 @@ import { checkJailbroken } from 'download0/check-jailbroken'
     for (let s = 0; s < MAX_PL; s++) {
       const idx = scrollOff + s
       const vis = idx < TOTAL
-      slotBtns[s]!.visible   = vis
-      slotBars[s]!.visible   = vis
-      slotNums[s]!.visible   = vis
+      slotBtns[s]!.visible = vis
+      slotBars[s]!.visible = vis
+      slotNums[s]!.visible = vis
       slotBadges[s]!.visible = vis
       slotLabels[s]!.visible = vis
-      slotPaths[s]!.visible  = vis
+      slotPaths[s]!.visible = vis
       if (!vis) continue
 
-      const f   = fileList[idx]!
+      const f = fileList[idx]!
       const sel = idx === cur
       const ext = f.name.split('.').pop()!.toUpperCase()
-      let   disp = f.name.replace(/\.(elf|bin|js)$/i, '')
+      let disp = f.name.replace(/\.(elf|bin|js)$/i, '')
       if (disp.length > 36) disp = disp.slice(0, 34) + '..'
       const pathHint = f.path.startsWith('/data/') ? '/data/payloads' : '/download0/payloads'
 
-      slotBtns[s]!.alpha       = sel ? 0.26 : 0.10
+      slotBtns[s]!.alpha = sel ? 0.26 : 0.10
       slotBtns[s]!.borderColor = sel ? 'rgba(80,200,255,0.85)' : 'rgba(255,255,255,0.14)'
       slotBtns[s]!.borderWidth = sel ? 2 : 1
-      slotBars[s]!.alpha       = sel ? 1.0 : 0.28
+      slotBars[s]!.alpha = sel ? 1.0 : 0.28
       slotBars[s]!.borderColor = sel ? 'rgb(80,220,255)' : 'rgb(120,200,255)'
 
-      slotNums[s]!.text    = String(idx + 1).padStart(2, '0')
-      slotNums[s]!.style   = sel ? 'lnumsel' : 'lnum'
-      slotBadges[s]!.text  = ext
+      slotNums[s]!.text = String(idx + 1).padStart(2, '0')
+      slotNums[s]!.style = sel ? 'lnumsel' : 'lnum'
+      slotBadges[s]!.text = ext
       slotBadges[s]!.style = sel ? 'bsel' : 'badge'
-      slotLabels[s]!.text  = disp
+      slotLabels[s]!.text = disp
       slotLabels[s]!.style = sel ? 'white' : 'muted'
-      slotPaths[s]!.text   = pathHint
+      slotPaths[s]!.text = pathHint
     }
 
     arrowUp.visible = scrollOff > 0
@@ -294,7 +309,7 @@ import { checkJailbroken } from 'download0/check-jailbroken'
 
   // ── Input ─────────────────────────────────────────────────────────────────
   const confirmKey = jsmaf.circleIsAdvanceButton ? 13 : 14
-  const backKey    = jsmaf.circleIsAdvanceButton ? 14 : 13
+  const backKey = jsmaf.circleIsAdvanceButton ? 14 : 13
 
   jsmaf.onKeyDown = function (kc: number) {
     if (kc === 6 || kc === 5) {

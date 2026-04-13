@@ -41,7 +41,7 @@ function _read8 (addr: BigInt) { return mem.view(addr).getUint8(0) }
 function _malloc (size: number) { return mem.malloc(size) }
 
 function get_fwversion_loader () {
-  const buf  = _malloc(0x8)
+  const buf = _malloc(0x8)
   const size = _malloc(0x8)
   _write64(size, 0x8)
   if (sysctlbyname('kern.sdk_version', buf, size, 0, 0)) {
@@ -53,7 +53,7 @@ function get_fwversion_loader () {
 }
 
 function is_exploit_complete () {
-  fn.register(24,  'getuid_l',        [], 'bigint')
+  fn.register(24, 'getuid_l', [], 'bigint')
   fn.register(585, 'is_in_sandbox_l', [], 'bigint')
   try {
     return fn.getuid_l().eq(0) && fn.is_in_sandbox_l().eq(0)
@@ -77,19 +77,19 @@ if (FW_VERSION === null) {
 }
 
 if (!is_jailbroken) {
-  const _ec       = (typeof CONFIG !== 'undefined' && CONFIG.exploit)        ? CONFIG.exploit        : {}
-  const jb_behav  = (typeof CONFIG !== 'undefined' && typeof CONFIG.jb_behavior === 'number') ? CONFIG.jb_behavior : 0
+  const _ec = (typeof CONFIG !== 'undefined' && CONFIG.exploit) ? CONFIG.exploit : {}
+  const jb_behav = (typeof CONFIG !== 'undefined' && typeof CONFIG.jb_behavior === 'number') ? CONFIG.jb_behavior : 0
 
   utils.notify(FW_VERSION + ' Detected!')
 
   xlog('╔══════════════════════════════════════╗')
   xlog('║   VAF Loader — ' + FW_VERSION + '              ║')
   xlog('╚══════════════════════════════════════╝')
-  xlog('core='    + (_ec.core    ?? 4)  +
-       '  rtprio='  + (_ec.rtprio  ?? 256) +
-       '  grooms='  + (_ec.grooms  ?? 512) +
-       '  races='   + (_ec.races   ?? 100) +
-       '  alias='   + (_ec.alias   ?? 100) +
+  xlog('core=' + (_ec.core ?? 4) +
+       '  rtprio=' + (_ec.rtprio ?? 256) +
+       '  grooms=' + (_ec.grooms ?? 512) +
+       '  races=' + (_ec.races ?? 100) +
+       '  alias=' + (_ec.alias ?? 100) +
        '  timeout=' + (_ec.timeout_s ?? 8) + 's')
 
   let use_lapse = false
@@ -113,7 +113,7 @@ if (!is_jailbroken) {
 
   // ── Poll for completion ───────────────────────────────────────────────
   if (use_lapse) {
-    const t_start   = Date.now()
+    const t_start = Date.now()
     const timeout_s = (_ec.timeout_s !== undefined) ? _ec.timeout_s : 8
     const timeout_ms = timeout_s * 1000
 
@@ -146,7 +146,6 @@ if (!is_jailbroken) {
       throw e
     }
   }
-
 } else {
   utils.notify('Already Jailbroken!')
   xlog('Already jailbroken — skipping exploit')

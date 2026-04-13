@@ -4,6 +4,9 @@ declare function log (message: string): void
 declare function debug (message: string): void
 declare function include (path: string): void
 
+// WebSocket server instance created by serve.js — available globally
+declare var ws: { broadcast: (msg: string) => void } | undefined
+
 declare var u32_structs: Uint32Array[]
 declare var spray_size: 0x100
 declare var marked_arr_offset: number
@@ -35,7 +38,6 @@ declare var CONFIG: {
   autopoop?: boolean;
   autoclose?: boolean;
   music?: boolean;
-  log_to_usb?: boolean;
   jb_behavior?: number;
   theme?: string;
   exploit?: Record<string, unknown>;

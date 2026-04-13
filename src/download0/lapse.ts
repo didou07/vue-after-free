@@ -1,7 +1,7 @@
 import { fn, BigInt, syscalls, gadgets, mem, rop, utils } from 'download0/types'
 import { kernel, apply_kernel_patches, hex, malloc, read16, read32, read64, read8, write16, write32, write64, write8, get_fwversion, send_notification, get_kernel_offset, get_mmap_patch_offsets } from 'download0/kernel'
 import { libc_addr } from 'download0/userland'
-import { xlog, xdbg, xerr, xok, xval, timer_start, timer_end, timer_end_stage, log_race_attempt, log_alias_attempt, log_clobber_attempt, log_reclaim_attempt, log_spray, stats, write_log_to_usb } from 'download0/logger'
+import { xlog, xdbg, xerr, xok, xval, timer_start, timer_end, timer_end_stage, log_race_attempt, log_alias_attempt, log_clobber_attempt, log_reclaim_attempt, log_spray, stats, print_summary } from 'download0/logger'
 
 include('kernel.js')
 
@@ -2124,7 +2124,7 @@ export function lapse () {
 
     // ── Save log to USB ───────────────────────────────────────────────────
     const _ec = (typeof CONFIG !== 'undefined' && CONFIG.exploit) ? CONFIG.exploit : {}
-    write_log_to_usb(FW_VERSION ?? 'unknown', _ec)
+    print_summary()
 
     return true
   } catch (e) {
@@ -2138,7 +2138,7 @@ export function lapse () {
     // Save log even on failure so we can diagnose
     try {
       const _ec2 = (typeof CONFIG !== 'undefined' && CONFIG.exploit) ? CONFIG.exploit : {}
-      write_log_to_usb(FW_VERSION ?? 'unknown', _ec2)
+      print_summary()
     } catch (_e) { /* ignore — primary save already attempted */ }
 
     return false

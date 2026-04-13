@@ -15,8 +15,7 @@
             "alias": 100,
             "sds": 64,
             "workers": 2,
-            "timeout_s": 8,
-            "log_to_usb": false
+            "timeout_s": 8
         }
     },
     "payloads": []

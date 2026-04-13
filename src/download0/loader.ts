@@ -4,7 +4,7 @@ import { sysctlbyname } from 'download0/kernel'
 import { lapse } from 'download0/lapse'
 import { binloader_init } from 'download0/binloader'
 import { checkJailbroken } from 'download0/check-jailbroken'
-import { xlog, xerr, xok, timer_start, timer_end_stage, write_log_to_usb } from 'download0/logger'
+import { xlog, xerr, xok, timer_start, timer_end_stage } from 'download0/logger'
 
 if (jsmaf.loader_has_run) {
   throw new Error('loader already ran')
@@ -124,7 +124,6 @@ if (!is_jailbroken) {
       if (Date.now() - t_start > timeout_ms) {
         xerr('TIMEOUT after ' + ((Date.now() - t_start) / 1000).toFixed(1) + 's')
         timer_end_stage('loader_timeout', 'Poll TIMEOUT')
-        write_log_to_usb(FW_VERSION, _ec)
         throw new Error('Lapse failed! restart and try again...')
       }
       const s = Date.now(); while (Date.now() - s < 500) {}
@@ -144,7 +143,6 @@ if (!is_jailbroken) {
       xerr('Binloader FAILED: ' + (e as Error).message)
       if ((e as Error).stack) xerr((e as Error).stack!)
       timer_end_stage('binloader', 'Binloader FAILED')
-      write_log_to_usb(FW_VERSION, _ec)
       throw e
     }
   }
